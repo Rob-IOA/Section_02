@@ -1,5 +1,11 @@
+#pragma once
+
 #include "FBullCowGame.h"
 
+#include <map>
+
+// Substitutions to match Unreal Engine standards
+#define TMap std::map
 using FString = std::string;
 using int32 = int;
 
@@ -12,7 +18,9 @@ FBullCowGame::FBullCowGame()
 
 int32 FBullCowGame::GetMaxTries() const
 {
-	return MyMaxTries;
+	TMap<int32, int32> WordLengthToMaxTries{ {3, 4}, {4, 7}, {5, 10}, {6, 16}, {7, 20} };
+
+	return WordLengthToMaxTries[MyHiddenWord.length()];
 }
 
 
@@ -29,21 +37,21 @@ int32 FBullCowGame::GetHiddenWordLength() const
 
 bool FBullCowGame::IsGameWon() const
 {
-	return false;
+	return bGameIsWon;
 }
 
 
 EGuessStatus FBullCowGame::CheckGuessValidity(FString Guess) const
 {
-	if (false)
+	if (!IsWord(Guess))
 	{
 		return EGuessStatus::Not_Word;
 	}
-	else if (false)
+	else if (!IsLowercase(Guess))
 	{
 		return EGuessStatus::Not_Lowercase;
 	}
-	else if (false)
+	else if (!IsIsogram(Guess))
 	{
 		return EGuessStatus::Not_Isogram;
 	}
@@ -88,7 +96,8 @@ FBullCowCount FBullCowGame::SubmitValidGuess(FString Guess)
 		}
 	}
 
-	// TODO don't think this belongs here...
+	bGameIsWon = (BullCowCount.Bulls == WordLength);
+
 	// Increment the current turn number
 	MyCurrentTry++;
 
@@ -99,11 +108,72 @@ FBullCowCount FBullCowGame::SubmitValidGuess(FString Guess)
 void FBullCowGame::Reset()
 {
 	const FString HIDDEN_WORD = "planet";
-	constexpr int32 MAX_TRIES = 8;
 
 	MyHiddenWord = HIDDEN_WORD;
-	MyMaxTries = MAX_TRIES;
 	MyCurrentTry = 1;
+	bGameIsWon = false;
 
 	return;
+}
+
+
+bool FBullCowGame::IsWord(FString Word) const
+{
+	for (auto Letter : Word)
+	{
+		if (!isalpha(Letter))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+bool FBullCowGame::IsLowercase(FString Word) const
+{
+	for (auto Letter : Word)
+	{
+		if (!isalpha(Letter))
+		{
+			return false;
+		}
+		else if (!islower(Letter))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+bool FBullCowGame::IsIsogram(FString Word) const
+{
+	// Hash table for tracking duplicated letters
+	TMap<char, bool> LetterSeen;
+
+	if (!IsWord(Word))
+	{
+		return false;
+	}
+
+	// Loop through each character in the word (boundary cases of empty string and single character both OK with this approach, i.e., will return true)
+	for (auto Letter : Word)
+	{
+		Letter = tolower(Letter);
+
+		if (LetterSeen[Letter])
+		{
+			return false;
+		}
+		else
+		{
+			LetterSeen[Letter] = true;
+		}
+	}
+
+	// If we haven't left the function early then it is an isogram
+	return true;
 }
